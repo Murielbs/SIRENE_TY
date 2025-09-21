@@ -1,15 +1,96 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// Mantenha o generator e datasource inalterados
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+// Modelos do banco de dados com base no código SQL
+model Militar {
+  id_militar      Int           @id @default(autoincrement())
+  nome            String        @db.VarChar(100)
+  matricula       String        @unique @db.VarChar(20)
+  posto           String        @db.VarChar(50)
+  email           String        @db.VarChar(100)
+  senha_hash      String        @db.VarChar(255)
+  perfil_acesso   String        @db.VarChar(20)
+  equipes         MilitarEquipe[]
+  lider_equipe    Equipe[]      @relation("LiderEquipe")
+  logs_auditoria  LogAuditoria[]
+  registros_ocorrencia RegistroOcorrencia[]
+  relatorios      Relatorio[]
+}
+
+model Equipe {
+  id_equipe       Int           @id @default(autoincrement())
+  nome_equipe     String        @db.VarChar(100)
+  turno           String        @db.VarChar(20)
+  id_militar_lider Int?
+  lider           Militar?      @relation("LiderEquipe", fields: [id_militar_lider], references: [id_militar])
+  membros         MilitarEquipe[]
+  registros_ocorrencia RegistroOcorrencia[]
+}
+
+model Ocorrencia {
+  id_ocorrencia   Int           @id @default(autoincrement())
+  data_hora       DateTime      @db.Timestamp()
+  tipo_ocorrencia String        @db.VarChar(50)
+  descricao       String?       @db.Text
+  localizacao_gps String?       @db.VarChar(100)
+  status          String        @db.VarChar(20)
+  assinatura_digital String?    @db.Text
+  foto_url        String?       @db.Text
+  video_url       String?       @db.Text
+  modo_treinamento Boolean
+  registros       RegistroOcorrencia[]
+  relatorios      Relatorio[]
+}
+
+model RegistroOcorrencia {
+  id_registro     Int           @id @default(autoincrement())
+  id_ocorrencia   Int
+  id_militar      Int
+  id_equipe       Int
+  data_registro   DateTime      @db.Timestamp()
+  observacoes     String?       @db.Text
+  ocorrencia      Ocorrencia    @relation(fields: [id_ocorrencia], references: [id_ocorrencia])
+  militar         Militar       @relation(fields: [id_militar], references: [id_militar])
+  equipe          Equipe        @relation(fields: [id_equipe], references: [id_equipe])
+}
+
+model LogAuditoria {
+  id_log          Int           @id @default(autoincrement())
+  id_militar      Int
+  acao            String?       @db.Text
+  data_hora       DateTime      @db.Timestamp()
+  ip_origem       String?       @db.VarChar(45)
+  militar         Militar       @relation(fields: [id_militar], references: [id_militar])
+}
+
+model Relatorio {
+  id_relatorio    Int           @id @default(autoincrement())
+  id_ocorrencia   Int
+  gerado_por      Int
+  data_geracao    DateTime      @db.Timestamp()
+  formato         String        @db.VarChar(10)
+  url_arquivo     String?       @db.Text
+  ocorrencia      Ocorrencia    @relation(fields: [id_ocorrencia], references: [id_ocorrencia])
+  gerador         Militar       @relation(fields: [gerado_por], references: [id_militar])
+}
+
+model MilitarEquipe {
+  id_militar      Int
+  id_equipe       Int
+  data_entrada    DateTime?     @db.Date
+  data_saida      DateTime?     @db.Date
+  militar         Militar       @relation(fields: [id_militar], references: [id_militar])
+  equipe          Equipe        @relation(fields: [id_equipe], references: [id_equipe])
+
+  @@id([id_militar, id_equipe])
 }
