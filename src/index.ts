@@ -1,24 +1,23 @@
-import express,{Request, Response} from 'express'
+// src/index.ts
+import express, { Express, Request, Response } from 'express';
+import dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes';
 
-const app = express()
+dotenv.config();
 
-let produts = []
+const app: Express = express();
+const PORT = process.env.PORT || 3000;
 
-app.get('/produtos',(req: Request, res: Response) => {
+app.use(express.json()); // Habilita o express para ler JSON
 
-    const newProduct = {
-       name:"bateria",
-       price: 300,
-       description:{
-          street:"rua escritor",
-          number: 0,
-          state: "PE"
-        }
+// Conecte as rotas de autenticação
+app.use('/api/auth', authRoutes);
 
-    }
-    produts.push(newProduct)
-    return res.json(produts)
-})
-app.listen(3000,() => {
-    console.log('servidor rodando')
-})
+// Rota de teste para ver se o servidor está online
+app.get('/', (req: Request, res: Response) => {
+  res.send('Servidor do Projeto Integrador de Bombeiros rodando!');
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+});
